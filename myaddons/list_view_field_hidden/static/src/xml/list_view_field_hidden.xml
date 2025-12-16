@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="list_view_field_hidden.ColumnChooser">
+        <div class="o_lvfh_dropdown btn-group">
+            <button type="button"
+                    class="btn btn-secondary btn-sm dropdown-toggle o_lvfh_toggle"
+                    data-toggle="dropdown"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    title="Toggle columns">
+                <span class="fa fa-sliders"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right o_lvfh_menu">
+                <t t-foreach="columns" t-as="col">
+                    <t t-if="col.tag == 'field' and col.attrs.name">
+                        <a href="#" class="dropdown-item o_lvfh_field_item"
+                           t-att-data-name="col.attrs.name">
+                            <span class="o_checkbox">
+                                <input type="checkbox"
+                                       t-att-checked="hiddenColumns[col.attrs.name] ? undefined : 'checked'"/>
+                            </span>
+                            <span class="o_lvfh_field_label">
+                                <t t-esc="col.attrs.string or (fields[col.attrs.name] and fields[col.attrs.name].string) or col.attrs.name"/>
+                            </span>
+                        </a>
+                    </t>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>
+
+

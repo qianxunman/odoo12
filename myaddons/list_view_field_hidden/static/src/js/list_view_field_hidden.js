@@ -265,7 +265,8 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
             var $chooserTh = $('<th>').addClass('o_lvfh_column_chooser').css({
                 'width': '1%',
                 'white-space': 'nowrap',
-                'text-align': 'right'
+                'text-align': 'right',
+                'position': 'relative'
             });
             try {
                 var templateData = {
@@ -291,7 +292,113 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
 
             // Initialize Bootstrap dropdown
             if ($.fn.dropdown) {
-                $chooserTh.find('.dropdown-toggle').dropdown();
+                var $toggle = $chooserTh.find('.dropdown-toggle');
+                var $menu = $chooserTh.find('.dropdown-menu');
+                
+                // Check if we're in a form view (one2many field)
+                var $formView = this.$el.closest('.o_field_x2many, .o_field_one2many, .o_field_x2many_list');
+                var isInFormView = $formView.length > 0;
+                
+                if (isInFormView) {
+                    // In form view, ensure dropdown menu can escape overflow containers
+                    // Use Bootstrap's dropdown events to adjust positioning
+                    $toggle.on('show.bs.dropdown', function(e) {
+                        var $btn = $(this);
+                        var $dropdown = $menu.parent();
+                        
+                        // Store original parent for restoration
+                        if (!$dropdown.data('original-parent')) {
+                            $dropdown.data('original-parent', $dropdown.parent());
+                        }
+                        
+                        // Calculate position after a short delay to ensure menu is rendered
+                        setTimeout(function() {
+                            var offset = $btn.offset();
+                            var btnWidth = $btn.outerWidth();
+                            var btnHeight = $btn.outerHeight();
+                            var menuWidth = $menu.outerWidth() || 200; // fallback width
+                            var windowWidth = $(window).width();
+                            var windowHeight = $(window).height();
+                            var scrollTop = $(window).scrollTop();
+                            var scrollLeft = $(window).scrollLeft();
+                            
+                            // Calculate max height based on available viewport space
+                            var maxMenuHeight = Math.min(400, windowHeight - 100); // Leave 100px margin
+                            
+                            // Move menu to body to escape overflow containers
+                            var $body = $('body');
+                            $menu.appendTo($body);
+                            
+                            // Set max height and ensure scrolling works
+                            $menu.css({
+                                'max-height': maxMenuHeight + 'px',
+                                'overflow-y': 'auto',
+                                'overflow-x': 'hidden'
+                            });
+                            
+                            // Calculate position relative to viewport (fixed positioning)
+                            var left = offset.left + btnWidth - menuWidth - scrollLeft;
+                            var top = offset.top + btnHeight - scrollTop;
+                            
+                            // Ensure menu doesn't go off screen horizontally
+                            if (left < 10) {
+                                left = offset.left - scrollLeft + 10;
+                            }
+                            if (left + menuWidth > windowWidth - 10) {
+                                left = windowWidth - menuWidth - 10;
+                            }
+                            
+                            // Ensure menu doesn't go off screen vertically
+                            // If not enough space below, show above button
+                            var spaceBelow = windowHeight - (top + scrollTop);
+                            var spaceAbove = (offset.top - scrollTop);
+                            
+                            if (spaceBelow < maxMenuHeight && spaceAbove > spaceBelow) {
+                                // Show above button
+                                top = offset.top - scrollTop - maxMenuHeight;
+                                if (top < 10) {
+                                    // If still not enough space, show at top with max height
+                                    top = 10;
+                                    maxMenuHeight = Math.min(maxMenuHeight, windowHeight - 20);
+                                    $menu.css('max-height', maxMenuHeight + 'px');
+                                }
+                            } else if (top + maxMenuHeight > windowHeight - 10) {
+                                // Adjust to fit in viewport
+                                top = windowHeight - maxMenuHeight - 10;
+                                if (top < 10) {
+                                    top = 10;
+                                }
+                            }
+                            
+                            $menu.css({
+                                'position': 'fixed',
+                                'z-index': '1051',
+                                'left': left + 'px',
+                                'top': top + 'px',
+                                'right': 'auto',
+                                'display': 'block'
+                            });
+                        }, 10);
+                    });
+                    
+                    $toggle.on('hide.bs.dropdown', function() {
+                        // Restore menu to original position
+                        var $dropdown = $menu.parent();
+                        var originalParent = $dropdown.data('original-parent');
+                        if (originalParent && originalParent.length) {
+                            $menu.appendTo(originalParent);
+                        }
+                        $menu.css({
+                            'position': '',
+                            'left': '',
+                            'top': '',
+                            'right': '',
+                            'display': ''
+                        });
+                    });
+                }
+                
+                $toggle.dropdown();
             }
 
             // apply hidden state on existing header cells

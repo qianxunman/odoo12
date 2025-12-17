@@ -1,24 +1,123 @@
 .o_lvfh_column_chooser {
     width: 1%;
     white-space: nowrap;
+    position: relative;
 }
 
-.o_lvfh_dropdown .o_lvfh_toggle {
-    padding-left: 6px;
-    padding-right: 6px;
+.o_lvfh_dropdown {
+    position: relative;
+    
+    .o_lvfh_toggle {
+        padding-left: 6px;
+        padding-right: 6px;
+        min-width: 32px;
+    }
+}
+
+.o_lvfh_menu {
+    // Ensure dropdown menu is visible in form views
+    position: absolute;
+    z-index: 1050; // Higher than default Bootstrap dropdown z-index
+    min-width: 200px;
+    max-width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    
+    // Ensure scrollbar is visible
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+        
+        &:hover {
+            background: #555;
+        }
+    }
+    
+    // For form views, ensure dropdown is positioned correctly
+    &.dropdown-menu-right {
+        right: 0;
+        left: auto;
+    }
 }
 
 .o_lvfh_menu .o_lvfh_field_item {
     display: flex;
     align-items: center;
+    white-space: nowrap;
 }
 
 .o_lvfh_menu .o_lvfh_field_item .o_checkbox {
     margin-right: 6px;
+    flex-shrink: 0;
 }
 
 .o_lvfh_menu .o_lvfh_field_label {
     flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+// Ensure table doesn't overflow in form views
+.o_field_x2many .o_list_view {
+    .o_lvfh_column_chooser {
+        // Prevent column chooser from causing overflow
+        max-width: 50px;
+    }
+    
+    // Ensure dropdown menu is visible
+    .o_lvfh_dropdown {
+        .dropdown-menu {
+            // Ensure dropdown is visible even if table is scrollable
+            position: absolute !important;
+        }
+    }
+}
+
+// Fix for form view one2many fields
+.o_field_x2many_list,
+.o_field_one2many,
+.o_field_x2many {
+    .o_list_view {
+        overflow-x: auto;
+        
+        // Ensure table header doesn't overflow
+        thead {
+            .o_lvfh_column_chooser {
+                position: sticky;
+                right: 0;
+                background: white;
+                z-index: 10;
+                padding: 8px 4px;
+            }
+        }
+        
+        // Ensure dropdown menu is visible and not clipped
+        .o_lvfh_dropdown {
+            position: relative;
+            
+            .dropdown-menu {
+                // Default Bootstrap positioning
+                max-height: 400px;
+                overflow-y: auto;
+                
+                // When moved to body (via JS), use fixed positioning
+                body > .o_lvfh_menu {
+                    position: fixed !important;
+                    z-index: 1051 !important;
+                }
+            }
+        }
+    }
 }
 
 

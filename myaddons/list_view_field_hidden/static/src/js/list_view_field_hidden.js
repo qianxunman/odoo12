@@ -43,8 +43,9 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
                 model = this.modelName;
             }
             
-            // Try to get view ID from arch first (most stable)
+            // Try to get view ID from arch only (most stable)
             // arch.view_id is set when the view is loaded from database
+            // DO NOT use state.id as it changes on every navigation
             var viewId = null;
             if (this.arch && this.arch.view_id) {
                 viewId = String(this.arch.view_id);
@@ -52,14 +53,8 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
                 viewId = String(this.arch.attrs.id);
             }
             
-            // If no viewId from arch, use state.id as fallback
-            // But prefer using just model to ensure consistency across navigation
-            if (!viewId && this.state && this.state.id) {
-                viewId = String(this.state.id);
-            }
-            
             // Use model + viewId if available, otherwise just model
-            // This ensures same model views share settings when viewId is not stable
+            // This ensures same model views share settings when viewId is not available
             var key = 'odoo12_lvfh:' + model;
             if (viewId && viewId !== 'default') {
                 key += ':' + viewId;
@@ -79,6 +74,12 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
                 console.warn('[list_view_field_hidden] Failed to read localStorage:', e);
                 return {};
             }
+            
+            // If no data found, try to migrate from old keys (with state.id)
+            if (!data) {
+                data = this._lvfh_tryMigrateFromOldKeys();
+            }
+            
             if (!data) {
                 return {};
             }
@@ -91,6 +92,57 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
             }
         },
 
+        /**
+         * Try to migrate data from old storage keys that used state.id
+         * This helps clean up localStorage and migrate user settings
+         *
+         * @private
+         */
+        _lvfh_tryMigrateFromOldKeys: function () {
+            var model = 'unknown_model';
+            if (this.state && this.state.model) {
+                model = this.state.model;
+            } else if (this.arch && this.arch.attrs && this.arch.attrs.model) {
+                model = this.arch.attrs.model;
+            } else if (this.modelName) {
+                model = this.modelName;
+            }
+            
+            // Try to find any old key for this model
+            var prefix = 'odoo12_lvfh:' + model + ':';
+            var migratedData = null;
+            
+            try {
+                // Check localStorage for old keys
+                for (var i = 0; i < window.localStorage.length; i++) {
+                    var key = window.localStorage.key(i);
+                    if (key && key.startsWith(prefix) && key !== this._lvfh_storageKey) {
+                        // Found an old key, try to migrate
+                        var oldData = window.localStorage.getItem(key);
+                        if (oldData) {
+                            try {
+                                var parsed = JSON.parse(oldData);
+                                if (parsed && Object.keys(parsed).length > 0) {
+                                    // Found valid data, migrate it
+                                    migratedData = oldData;
+                                    // Save to new key
+                                    window.localStorage.setItem(this._lvfh_storageKey, oldData);
+                                    console.log('[list_view_field_hidden] Migrated data from old key:', key, 'to:', this._lvfh_storageKey);
+                                    break;
+                                }
+                            } catch (e) {
+                                // Invalid data, skip
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[list_view_field_hidden] Failed to migrate from old keys:', e);
+            }
+            
+            return migratedData;
+        },
+
         _lvfh_saveHiddenColumns: function () {
             if (!this._lvfh_storageKey) {
                 this._lvfh_storageKey = this._lvfh_computeStorageKey();
@@ -99,8 +151,60 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
                 var data = JSON.stringify(this._lvfh_hiddenColumns || {});
                 window.localStorage.setItem(this._lvfh_storageKey, data);
                 console.log('[list_view_field_hidden] Saved to localStorage:', this._lvfh_storageKey, this._lvfh_hiddenColumns);
+                
+                // Clean up old keys for the same model (optional, runs occasionally)
+                // This helps prevent localStorage from filling up
+                if (Math.random() < 0.1) { // 10% chance to clean up
+                    this._lvfh_cleanupOldKeys();
+                }
             } catch (e) {
                 console.warn('[list_view_field_hidden] Failed to save to localStorage:', e);
+            }
+        },
+
+        /**
+         * Clean up old storage keys that used state.id
+         * This helps prevent localStorage from filling up
+         *
+         * @private
+         */
+        _lvfh_cleanupOldKeys: function () {
+            var model = 'unknown_model';
+            if (this.state && this.state.model) {
+                model = this.state.model;
+            } else if (this.arch && this.arch.attrs && this.arch.attrs.model) {
+                model = this.arch.attrs.model;
+            } else if (this.modelName) {
+                model = this.modelName;
+            }
+            
+            var prefix = 'odoo12_lvfh:' + model + ':';
+            var keysToRemove = [];
+            
+            try {
+                // Find all old keys for this model
+                for (var i = 0; i < window.localStorage.length; i++) {
+                    var key = window.localStorage.key(i);
+                    if (key && key.startsWith(prefix) && key !== this._lvfh_storageKey) {
+                        // Check if this looks like an old key (contains model name pattern like sale.order_123)
+                        if (key.match(/_[0-9]+$/)) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                }
+                
+                // Remove old keys (limit to 10 at a time to avoid blocking)
+                var removed = 0;
+                for (var j = 0; j < Math.min(keysToRemove.length, 10); j++) {
+                    window.localStorage.removeItem(keysToRemove[j]);
+                    removed++;
+                }
+                
+                if (removed > 0) {
+                    console.log('[list_view_field_hidden] Cleaned up', removed, 'old localStorage keys');
+                }
+            } catch (e) {
+                console.warn('[list_view_field_hidden] Failed to cleanup old keys:', e);
             }
         },
 

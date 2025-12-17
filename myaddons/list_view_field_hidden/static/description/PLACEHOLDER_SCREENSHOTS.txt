@@ -1,0 +1,10 @@
+PLACEHOLDER FOR SCREENSHOTS
+============================
+
+Please replace this file with actual screenshots:
+
+1. screenshot1.png - Column chooser dropdown menu open
+2. screenshot2.png - List view with hidden columns applied
+
+See README_SCREENSHOTS.md for detailed instructions on how to take these screenshots.
+

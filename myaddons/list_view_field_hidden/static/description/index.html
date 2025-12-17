@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>List View Field Hidden</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #714B67;
+            border-bottom: 3px solid #714B67;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #714B67;
+            margin-top: 30px;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:before {
+            content: "✓ ";
+            color: #714B67;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .screenshot {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .screenshot img {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .screenshot-caption {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+        }
+        .code-block {
+            background: #f4f4f4;
+            border-left: 4px solid #714B67;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #714B67;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.9em;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>List View Field Hidden</h1>
+        
+        <p><strong>Customize your list view columns with persistent browser storage</strong></p>
+        
+        <p>
+            <span class="badge">Odoo 12.0</span>
+            <span class="badge">Tools</span>
+            <span class="badge">Web</span>
+        </p>
+
+        <h2>Overview</h2>
+        <p>
+            <strong>List View Field Hidden</strong> is a powerful Odoo 12 module that allows users to customize 
+            list view columns visibility with persistent browser storage. This module enhances user experience 
+            by letting users hide/show columns in list views and automatically remembers their preferences across 
+            browser sessions.
+        </p>
+
+        <h2>Features</h2>
+        <ul class="feature-list">
+            <li><strong>Customizable Column Visibility</strong>: Show or hide any column in list views with a simple click</li>
+            <li><strong>Persistent Storage</strong>: User preferences are saved in browser localStorage and persist across sessions</li>
+            <li><strong>Works Everywhere</strong>: Automatically works in standard list views and one2many fields in form views</li>
+            <li><strong>Smart Storage</strong>: Uses stable storage keys to prevent localStorage bloat</li>
+            <li><strong>Easy to Use</strong>: Simple dropdown menu with checkboxes for each field</li>
+            <li><strong>No Configuration Required</strong>: Works out of the box after installation</li>
+        </ul>
+
+        <h2>Screenshots</h2>
+        
+        <div class="screenshot">
+            <img src="screenshot1.png" alt="Column Chooser Dropdown">
+            <div class="screenshot-caption">
+                The column chooser dropdown menu allows you to toggle column visibility with checkboxes.
+            </div>
+        </div>
+
+        <div class="screenshot">
+            <img src="screenshot2.png" alt="Hidden Columns">
+            <div class="screenshot-caption">
+                Hidden columns are automatically remembered and applied when you return to the view.
+            </div>
+        </div>
+
+        <h2>Installation</h2>
+        <ol>
+            <li>Copy the <code>list_view_field_hidden</code> module to your Odoo addons directory</li>
+            <li>Update the apps list in Odoo</li>
+            <li>Search for "List View Field Hidden" in the Apps menu</li>
+            <li>Click "Install"</li>
+        </ol>
+
+        <h2>Usage</h2>
+        <h3>How to Use</h3>
+        <ol>
+            <li><strong>Open any list view</strong> (e.g., Sales > Quotations)</li>
+            <li><strong>Locate the column chooser icon</strong> (slider icon ⚙️) in the top-right corner of the table header</li>
+            <li><strong>Click the icon</strong> to open the dropdown menu</li>
+            <li><strong>Check/uncheck fields</strong> to show or hide columns</li>
+            <li><strong>Your preferences are automatically saved</strong> and will persist when you:
+                <ul>
+                    <li>Refresh the browser</li>
+                    <li>Navigate away and return</li>
+                    <li>Close and reopen the browser</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>Example</h3>
+        <ol>
+            <li>Navigate to <strong>Sales > Quotations</strong></li>
+            <li>Click the <strong>slider icon</strong> (⚙️) in the table header</li>
+            <li>Uncheck "Quotation Number" to hide that column</li>
+            <li>The column disappears immediately</li>
+            <li>Navigate away and return - your preference is remembered!</li>
+        </ol>
+
+        <h2>Technical Details</h2>
+        <h3>Storage</h3>
+        <ul>
+            <li>Preferences are stored in browser localStorage</li>
+            <li>Storage key format: <code>odoo12_lvfh:{model}:{view_id}</code></li>
+            <li>Automatically migrates from old storage keys</li>
+            <li>Includes cleanup mechanism to prevent localStorage bloat</li>
+        </ul>
+
+        <h3>Compatibility</h3>
+        <ul>
+            <li><strong>Odoo Version</strong>: 12.0</li>
+            <li><strong>Dependencies</strong>: web</li>
+            <li><strong>License</strong>: OPL-1</li>
+        </ul>
+
+        <h2>Use Cases</h2>
+        <ul>
+            <li>Hide columns you rarely use to focus on important data</li>
+            <li>Customize list views per user preference</li>
+            <li>Reduce visual clutter in complex list views</li>
+            <li>Improve productivity by showing only relevant columns</li>
+        </ul>
+
+        <h2>Changelog</h2>
+        <h3>Version 12.0.1.0.0</h3>
+        <ul>
+            <li>Initial release</li>
+            <li>Column visibility toggle functionality</li>
+            <li>Persistent browser storage</li>
+            <li>Support for list views and one2many fields</li>
+            <li>Automatic storage key migration</li>
+            <li>Cleanup mechanism for old storage keys</li>
+        </ul>
+
+        <h2>Support</h2>
+        <p>For issues, questions, or contributions, please contact:</p>
+        <ul>
+            <li><strong>Email</strong>: <a href="mailto:hb.luojun@outlook.com">hb.luojun@outlook.com</a></li>
+        </ul>
+
+        <h2>Pricing</h2>
+        <p>This module is available for <strong>$10.00 USD</strong> on the Odoo Apps Store.</p>
+
+        <hr>
+        <p style="text-align: center; color: #666;">
+            <strong>Author</strong>: qianxunman | 
+            <strong>Version</strong>: 12.0.1.0.0 | 
+            <strong>License</strong>: OPL-1 |
+            <strong>Price</strong>: $10.00 USD
+        </p>
+    </div>
+</body>
+</html>
+

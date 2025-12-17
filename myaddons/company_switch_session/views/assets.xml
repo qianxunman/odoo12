@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="assets_backend" model="ir.ui.view">
+            <field name="name">company_switch_session.assets_backend</field>
+            <field name="inherit_id" ref="web.assets_backend"/>
+            <field name="arch" type="xml">
+                <xpath expr="." position="inside">
+                    <script type="text/javascript" src="/company_switch_session/static/src/js/switch_company_session.js"/>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
+

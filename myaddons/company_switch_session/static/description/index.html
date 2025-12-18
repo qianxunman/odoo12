@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Company Switch Session for Odoo 12</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 32px; color: #333; }
+      h1 { color: #714B67; }
+      h2 { color: #714B67; margin-top: 24px; }
+      ul { margin-left: 20px; }
+      .meta { margin-top: 16px; font-size: 14px; color: #666; }
+      .price { font-weight: bold; color: #008800; }
+      .screenshot-note { margin-top: 16px; font-size: 13px; color: #777; }
+    </style>
+  </head>
+  <body>
+    <h1>Company Switch Session (Odoo 12)</h1>
+    <p>
+      Improve your multi-company workflow by allowing users to switch their
+      working company per browser tab/session, without changing the default
+      company stored on the user record.
+    </p>
+
+    <h2>Main Features</h2>
+    <ul>
+      <li><strong>Per‑tab company selection</strong> &mdash; each browser tab can work in a different company.</li>
+      <li><strong>No write on user company</strong> &mdash; the database field <code>res.users.company_id</code> is never updated when switching.</li>
+      <li><strong>Context‑driven queries</strong> &mdash; ORM, default values and record rules use the company from the current page context.</li>
+      <li><strong>Compatible with standard UI</strong> &mdash; reuses Odoo's native company selector in the top bar.</li>
+    </ul>
+
+    <h2>How It Works</h2>
+    <ul>
+      <li>The selected company is stored in the HTTP session and browser storage.</li>
+      <li>The server injects this company into <code>company_id</code>, <code>force_company</code>
+        and <code>allowed_company_ids</code> in the context.</li>
+      <li>Record rules that depend on <code>user.company_id</code> are evaluated using the
+        session-selected company.</li>
+    </ul>
+
+    <h2>Usage</h2>
+    <ol>
+      <li>Install the module <strong>company_switch_session</strong> on Odoo 12.</li>
+      <li>Log in as a user with access to multiple companies.</li>
+      <li>Use the company selector in the top-right corner to change company.</li>
+      <li>Open multiple tabs and select different companies in each tab.</li>
+    </ol>
+
+    <div class="meta">
+      <p><strong>Author</strong>: qianxunman</p>
+      <p><strong>Email</strong>: <a href="mailto:hb.luojun@outlook.com">hb.luojun@outlook.com</a></p>
+      <p class="price">Price: 10 USD</p>
+    </div>
+
+    <p class="screenshot-note">
+      Note: add your own screenshots in this folder before uploading to
+      apps.odoo.com (for example, company selector and list views per company).
+    </p>
+  </body>
+</html>
+
+

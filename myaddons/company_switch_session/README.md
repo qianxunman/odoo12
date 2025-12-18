@@ -32,6 +32,11 @@ value stored in the database.
    - Lists, forms and reports will use the company chosen in that tab without
      touching the user default company in the database.
 
+## Demo Video
+
+You can watch a quick feature demo on YouTube:  
+[Company Switch Session Demo](https://youtu.be/Akl2YaZubeQ)
+
 ## Compatibility
 
 - Tested on: **Odoo 12.0 Community/Enterprise**

@@ -87,6 +87,11 @@
 
 *Hidden columns are automatically remembered and applied when you return to the view.*
 
+## Demo Video
+
+You can watch a quick feature demo on YouTube:  
+[List View Field Hidden Demo](https://youtu.be/nCzf6QQLRMg)
+
 ## Support
 
 For issues, questions, or contributions, please contact:

@@ -1,7 +1,7 @@
 {
     'name': 'List View Field Hidden',
     'summary': 'Customize list view columns visibility with persistent browser storage',
-    'version': '12.0.1.0.0',
+    'version': '12.0.2.0.0',
     'author': 'qianxunman',
     'website': '',
     'support': 'hb.luojun@outlook.com',
@@ -37,6 +37,10 @@ Features:
 * Smart Storage: Stable storage keys prevent localStorage bloat
 * Easy to Use: Simple dropdown menu with checkboxes
 * No Configuration Required: Works out of the box
+* Column Width Adjustment: Drag to resize columns (Odoo 18-style)
+* Column Search: Search for columns in the dropdown menu
+* Batch Actions: Show/Hide all columns with one click
+* Keyboard Shortcuts: Ctrl+Shift+C to toggle chooser, Ctrl+Shift+S/H to show/hide all
 
 Usage:
 ------

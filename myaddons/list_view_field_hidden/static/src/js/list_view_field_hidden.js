@@ -19,13 +19,27 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
         events: _.extend({}, ListRenderer.prototype.events, {
             'click .o_lvfh_menu .o_lvfh_field_item': '_onToggleColumnVisibility',
             'click .o_lvfh_menu .o_lvfh_field_item input[type="checkbox"]': '_onToggleColumnVisibilityCheckbox',
+            'input .o_lvfh_search_input': '_onSearchColumns',
+            'click .o_lvfh_show_all': '_onShowAllColumns',
+            'click .o_lvfh_hide_all': '_onHideAllColumns',
+            'mousedown .o_lvfh_resize_handle': '_onStartResize',
+            'mousedown .o_lvfh_drag_handle': '_onStartDrag',
         }),
 
         init: function () {
             this._super.apply(this, arguments);
             // Initialize storage key and hidden columns after state is available
             this._lvfh_hiddenColumns = {};
+            this._lvfh_columnWidths = {};
+            this._lvfh_columnOrder = null;
             this._lvfh_storageKey = null;
+            this._lvfh_resizeState = null;
+            this._lvfh_dragState = null;
+            this._lvfh_searchTerm = '';
+            
+            // Bind keyboard shortcuts to document
+            this._lvfh_keydownHandler = _.bind(this._onLvfhKeyDown, this);
+            $(document).on('keydown.lvfh', this._lvfh_keydownHandler);
         },
 
         // ---------------------------------------------------------------------
@@ -85,7 +99,19 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
             }
             try {
                 var parsed = JSON.parse(data);
-                return parsed || {};
+                // Support both old format (just hidden columns) and new format (object with multiple properties)
+                if (parsed && typeof parsed === 'object') {
+                    if (parsed.hiddenColumns) {
+                        // New format with multiple properties
+                        this._lvfh_columnWidths = parsed.columnWidths || {};
+                        this._lvfh_columnOrder = parsed.columnOrder || null;
+                        return parsed.hiddenColumns || {};
+                    } else {
+                        // Old format (just hidden columns object)
+                        return parsed || {};
+                    }
+                }
+                return {};
             } catch (e2) {
                 console.warn('[list_view_field_hidden] Failed to parse localStorage data:', e2);
                 return {};
@@ -148,9 +174,14 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
                 this._lvfh_storageKey = this._lvfh_computeStorageKey();
             }
             try {
-                var data = JSON.stringify(this._lvfh_hiddenColumns || {});
+                // Save all preferences in a single object
+                var data = JSON.stringify({
+                    hiddenColumns: this._lvfh_hiddenColumns || {},
+                    columnWidths: this._lvfh_columnWidths || {},
+                    columnOrder: this._lvfh_columnOrder || null,
+                });
                 window.localStorage.setItem(this._lvfh_storageKey, data);
-                console.log('[list_view_field_hidden] Saved to localStorage:', this._lvfh_storageKey, this._lvfh_hiddenColumns);
+                console.log('[list_view_field_hidden] Saved to localStorage:', this._lvfh_storageKey);
                 
                 // Clean up old keys for the same model (optional, runs occasionally)
                 // This helps prevent localStorage from filling up
@@ -470,6 +501,14 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
             this._lvfh_storageKey = this._lvfh_computeStorageKey();
             this._lvfh_hiddenColumns = this._lvfh_loadHiddenColumns();
             
+            // Load column widths and order from storage
+            if (!this._lvfh_columnWidths) {
+                this._lvfh_columnWidths = {};
+            }
+            if (!this._lvfh_columnOrder) {
+                this._lvfh_columnOrder = null;
+            }
+            
             var result = this._super.apply(this, arguments);
             
             // Apply hidden columns after rendering
@@ -525,11 +564,15 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
             if (result && result.then) {
                 result.then(function() {
                     applyHiddenColumns();
+                    self._lvfh_applyColumnWidths();
+                    self._lvfh_addResizeHandles();
                 });
             } else {
                 // If not a promise, initialize immediately
                 setTimeout(function() {
                     applyHiddenColumns();
+                    self._lvfh_applyColumnWidths();
+                    self._lvfh_addResizeHandles();
                 }, 0);
             }
             
@@ -701,6 +744,339 @@ odoo.define('list_view_field_hidden.ListRenderer', function (require) {
                         $footerCell.removeClass('o_lvfh_col_hidden').show();
                     }
                 }
+            }
+        },
+
+        // ---------------------------------------------------------------------
+        // New Odoo 18-style features
+        // ---------------------------------------------------------------------
+
+        /**
+         * Handle search input in column chooser dropdown.
+         *
+         * @private
+         */
+        _onSearchColumns: function (ev) {
+            var searchTerm = $(ev.currentTarget).val().toLowerCase();
+            this._lvfh_searchTerm = searchTerm;
+            
+            var $menu = this.$('.o_lvfh_menu');
+            var $items = $menu.find('.o_lvfh_field_item');
+            
+            if (!searchTerm) {
+                $items.show();
+                return;
+            }
+            
+            $items.each(function() {
+                var $item = $(this);
+                var fieldLabel = $item.find('.o_lvfh_field_label').text().toLowerCase();
+                if (fieldLabel.indexOf(searchTerm) >= 0) {
+                    $item.show();
+                } else {
+                    $item.hide();
+                }
+            });
+        },
+
+        /**
+         * Show all columns.
+         *
+         * @private
+         */
+        _onShowAllColumns: function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            
+            var self = this;
+            var $menu = this.$('.o_lvfh_menu');
+            var $items = $menu.find('.o_lvfh_field_item');
+            
+            // Show all visible items (respecting search filter)
+            $items.filter(':visible').each(function() {
+                var $item = $(this);
+                var fieldName = $item.data('name');
+                if (fieldName && self._lvfh_isHidden(fieldName)) {
+                    self._lvfh_toggleField(fieldName);
+                    $item.find('input[type="checkbox"]').prop('checked', true);
+                    self._lvfh_updateColumnVisibility(fieldName);
+                }
+            });
+        },
+
+        /**
+         * Hide all columns.
+         *
+         * @private
+         */
+        _onHideAllColumns: function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            
+            var self = this;
+            var $menu = this.$('.o_lvfh_menu');
+            var $items = $menu.find('.o_lvfh_field_item');
+            
+            // Hide all visible items (respecting search filter)
+            $items.filter(':visible').each(function() {
+                var $item = $(this);
+                var fieldName = $item.data('name');
+                if (fieldName && !self._lvfh_isHidden(fieldName)) {
+                    self._lvfh_toggleField(fieldName);
+                    $item.find('input[type="checkbox"]').prop('checked', false);
+                    self._lvfh_updateColumnVisibility(fieldName);
+                }
+            });
+        },
+
+        /**
+         * Start column resize operation.
+         *
+         * @private
+         */
+        _onStartResize: function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            
+            var $handle = $(ev.currentTarget);
+            var $headerCell = $handle.closest('th, td');
+            var columnIndex = $headerCell.index();
+            
+            // Adjust for selector column if exists
+            if (this.hasSelectors) {
+                columnIndex -= 1;
+            }
+            
+            // Find the field name for this column
+            var fieldName = null;
+            if (this.columns && this.columns[columnIndex] && this.columns[columnIndex].attrs) {
+                fieldName = this.columns[columnIndex].attrs.name;
+            }
+            
+            if (!fieldName) {
+                return;
+            }
+            
+            var startX = ev.pageX;
+            var startWidth = $headerCell.outerWidth();
+            
+            this._lvfh_resizeState = {
+                fieldName: fieldName,
+                columnIndex: columnIndex,
+                startX: startX,
+                startWidth: startWidth,
+                $headerCell: $headerCell,
+            };
+            
+            $(document).on('mousemove.lvfh_resize', _.bind(this._onResize, this));
+            $(document).on('mouseup.lvfh_resize', _.bind(this._onEndResize, this));
+            
+            $('body').addClass('o_lvfh_resizing');
+        },
+
+        /**
+         * Handle column resize during mouse move.
+         *
+         * @private
+         */
+        _onResize: function (ev) {
+            if (!this._lvfh_resizeState) {
+                return;
+            }
+            
+            var deltaX = ev.pageX - this._lvfh_resizeState.startX;
+            var newWidth = Math.max(50, this._lvfh_resizeState.startWidth + deltaX);
+            
+            // Apply width to header cell
+            this._lvfh_resizeState.$headerCell.css('width', newWidth + 'px');
+            
+            // Apply width to all body cells in this column
+            var columnIndex = this._lvfh_resizeState.columnIndex;
+            var bodyCellIndex = columnIndex + (this.hasSelectors ? 1 : 0);
+            
+            this.$('tbody tr').each(function() {
+                var $row = $(this);
+                if (!$row.hasClass('o_group_header')) {
+                    var $cells = $row.children('td,th');
+                    if ($cells.length > bodyCellIndex) {
+                        $cells.eq(bodyCellIndex).css('width', newWidth + 'px');
+                    }
+                }
+            });
+        },
+
+        /**
+         * End column resize operation.
+         *
+         * @private
+         */
+        _onEndResize: function (ev) {
+            if (!this._lvfh_resizeState) {
+                return;
+            }
+            
+            var fieldName = this._lvfh_resizeState.fieldName;
+            var newWidth = this._lvfh_resizeState.$headerCell.outerWidth();
+            
+            // Save width preference
+            if (!this._lvfh_columnWidths) {
+                this._lvfh_columnWidths = {};
+            }
+            this._lvfh_columnWidths[fieldName] = newWidth;
+            this._lvfh_saveHiddenColumns();
+            
+            $(document).off('mousemove.lvfh_resize');
+            $(document).off('mouseup.lvfh_resize');
+            $('body').removeClass('o_lvfh_resizing');
+            
+            this._lvfh_resizeState = null;
+        },
+
+        /**
+         * Start column drag operation for reordering.
+         *
+         * @private
+         */
+        _onStartDrag: function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            
+            // Column reordering is complex and may break Odoo's internal state
+            // For now, we'll skip this feature to maintain stability
+            // This can be implemented later if needed
+            console.log('[list_view_field_hidden] Column reordering not yet implemented');
+        },
+
+        /**
+         * Apply saved column widths.
+         *
+         * @private
+         */
+        _lvfh_applyColumnWidths: function () {
+            if (!this._lvfh_columnWidths || !this.columns) {
+                return;
+            }
+            
+            var self = this;
+            _.each(this.columns, function (node, index) {
+                if (node.tag === 'field' && node.attrs && node.attrs.name) {
+                    var fieldName = node.attrs.name;
+                    var width = self._lvfh_columnWidths[fieldName];
+                    if (width) {
+                        var headerIndex = index + (self.hasSelectors ? 1 : 0);
+                        var $headerRow = self.$('thead tr').first();
+                        if ($headerRow.length) {
+                            var $headerCell = $headerRow.children('th,td').eq(headerIndex);
+                            if ($headerCell.length) {
+                                $headerCell.css('width', width + 'px');
+                            }
+                        }
+                        
+                        // Apply to body cells
+                        var bodyCellIndex = headerIndex;
+                        self.$('tbody tr').each(function() {
+                            var $row = $(this);
+                            if (!$row.hasClass('o_group_header')) {
+                                var $cells = $row.children('td,th');
+                                if ($cells.length > bodyCellIndex) {
+                                    $cells.eq(bodyCellIndex).css('width', width + 'px');
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        },
+
+        /**
+         * Add resize handles to column headers.
+         *
+         * @private
+         */
+        _lvfh_addResizeHandles: function () {
+            var self = this;
+            var $headerRow = this.$('thead tr').first();
+            if (!$headerRow.length) {
+                return;
+            }
+            
+            _.each(this.columns, function (node, index) {
+                if (node.tag === 'field' && node.attrs && node.attrs.name) {
+                    var headerIndex = index + (self.hasSelectors ? 1 : 0);
+                    var $headerCell = $headerRow.children('th,td').eq(headerIndex);
+                    if ($headerCell.length && !$headerCell.hasClass('o_lvfh_column_chooser')) {
+                        // Check if resize handle already exists
+                        if ($headerCell.find('.o_lvfh_resize_handle').length === 0) {
+                            var $resizeHandle = $('<div>')
+                                .addClass('o_lvfh_resize_handle')
+                                .attr('title', 'Drag to resize column');
+                            $headerCell.append($resizeHandle);
+                            $headerCell.css('position', 'relative');
+                        }
+                    }
+                }
+            });
+        },
+
+        /**
+         * Clean up event listeners when renderer is destroyed.
+         *
+         * @override
+         */
+        destroy: function () {
+            // Clean up keyboard shortcuts
+            if (this._lvfh_keydownHandler) {
+                $(document).off('keydown.lvfh', this._lvfh_keydownHandler);
+            }
+            
+            // Clean up resize handlers if active
+            if (this._lvfh_resizeState) {
+                $(document).off('mousemove.lvfh_resize');
+                $(document).off('mouseup.lvfh_resize');
+                $('body').removeClass('o_lvfh_resizing');
+            }
+            
+            return this._super.apply(this, arguments);
+        },
+
+        /**
+         * Handle keyboard shortcuts.
+         * 
+         * Shortcuts:
+         * - Ctrl+Shift+C: Toggle column chooser dropdown
+         * - Ctrl+Shift+S: Show all columns
+         * - Ctrl+Shift+H: Hide all columns
+         *
+         * @private
+         */
+        _onLvfhKeyDown: function (ev) {
+            // Only handle shortcuts when not in an input field
+            if ($(ev.target).is('input, textarea, select')) {
+                return;
+            }
+            
+            // Ctrl+Shift+C: Toggle column chooser
+            if (ev.ctrlKey && ev.shiftKey && ev.keyCode === 67) {
+                ev.preventDefault();
+                var $toggle = this.$('.o_lvfh_toggle');
+                if ($toggle.length) {
+                    $toggle.dropdown('toggle');
+                }
+                return;
+            }
+            
+            // Ctrl+Shift+S: Show all columns
+            if (ev.ctrlKey && ev.shiftKey && ev.keyCode === 83) {
+                ev.preventDefault();
+                this._onShowAllColumns(ev);
+                return;
+            }
+            
+            // Ctrl+Shift+H: Hide all columns
+            if (ev.ctrlKey && ev.shiftKey && ev.keyCode === 72) {
+                ev.preventDefault();
+                this._onHideAllColumns(ev);
+                return;
             }
         },
     });

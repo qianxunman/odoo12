@@ -588,8 +588,17 @@ class GeventServer(CommonServer):
             signal.signal(signal.SIGUSR1, log_ormcache_stats)
             gevent.spawn(self.watchdog)
 
-        self.httpd = WSGIServer((self.interface, self.port), self.app)
-        _logger.info('Evented Service (longpolling) running on %s:%s', self.interface, self.port)
+        # Try to enable WebSocket support if gevent-websocket is available
+        try:
+            from geventwebsocket.handler import WebSocketHandler
+            self.httpd = WSGIServer((self.interface, self.port), self.app, handler_class=WebSocketHandler)
+            _logger.info('Evented Service (WebSocket) running on %s:%s', self.interface, self.port)
+        except ImportError:
+            # Fallback to regular WSGIServer if gevent-websocket is not available
+            self.httpd = WSGIServer((self.interface, self.port), self.app)
+            _logger.info('Evented Service (longpolling) running on %s:%s', self.interface, self.port)
+            _logger.warning('gevent-websocket not installed, WebSocket support disabled. Install with: pip install gevent-websocket')
+
         try:
             self.httpd.serve_forever()
         except:

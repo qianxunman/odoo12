@@ -4,6 +4,7 @@
         <template id="assets_backend" name="List View Field Hidden assets" inherit_id="web.assets_backend">
             <xpath expr="." position="inside">
                 <script type="text/javascript" src="/list_view_field_hidden/static/src/js/list_view_field_hidden.js"/>
+                <script type="text/javascript" src="/list_view_field_hidden/static/src/js/form_auto_edit.js"/>
                 <link rel="stylesheet" type="text/scss" href="/list_view_field_hidden/static/src/scss/list_view_field_hidden.scss"/>
             </xpath>
         </template>

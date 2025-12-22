@@ -67,6 +67,90 @@
     text-overflow: ellipsis;
 }
 
+// Search container
+.o_lvfh_search_container {
+    padding: 8px;
+    
+    .o_lvfh_search_input {
+        width: 100%;
+        padding: 6px 8px;
+        font-size: 13px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        
+        &:focus {
+            outline: none;
+            border-color: #714B67;
+            box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.1);
+        }
+    }
+}
+
+// Batch actions
+.o_lvfh_batch_actions {
+    padding: 4px 0;
+    
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        padding: 6px 12px;
+        
+        .fa {
+            margin-right: 8px;
+            width: 16px;
+        }
+        
+        &:hover {
+            background-color: #f5f5f5;
+        }
+    }
+}
+
+// Resize handle
+.o_lvfh_resize_handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    cursor: col-resize;
+    background: transparent;
+    z-index: 10;
+    
+    &:hover {
+        background: rgba(113, 75, 103, 0.3);
+    }
+    
+    &:active {
+        background: rgba(113, 75, 103, 0.5);
+    }
+}
+
+// Resizing state
+body.o_lvfh_resizing {
+    cursor: col-resize;
+    user-select: none;
+    
+    * {
+        cursor: col-resize !important;
+    }
+}
+
+// Column header with resize handle
+th, td {
+    &.o_column_sortable,
+    &.o_list_record_selector {
+        position: relative;
+    }
+}
+
+// Fields list container
+.o_lvfh_fields_list {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 // Ensure table doesn't overflow in form views
 .o_field_x2many .o_list_view {
     .o_lvfh_column_chooser {

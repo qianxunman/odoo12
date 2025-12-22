@@ -89,6 +89,7 @@
         
         <p>
             <span class="badge">Odoo 12.0</span>
+            <span class="badge">Odoo 18 Features</span>
             <span class="badge">Tools</span>
             <span class="badge">Web</span>
         </p>
@@ -109,6 +110,10 @@
             <li><strong>Smart Storage</strong>: Uses stable storage keys to prevent localStorage bloat</li>
             <li><strong>Easy to Use</strong>: Simple dropdown menu with checkboxes for each field</li>
             <li><strong>No Configuration Required</strong>: Works out of the box after installation</li>
+            <li><strong>Column Width Adjustment</strong>: Drag column borders to resize columns (Odoo 18-style feature)</li>
+            <li><strong>Column Search</strong>: Quickly find columns using the search box in the dropdown menu</li>
+            <li><strong>Batch Actions</strong>: Show or hide all columns with a single click</li>
+            <li><strong>Keyboard Shortcuts</strong>: Use Ctrl+Shift+C to toggle column chooser, Ctrl+Shift+S/H to show/hide all columns</li>
         </ul>
 
         <h2>Screenshots</h2>
@@ -147,7 +152,10 @@
             <li><strong>Open any list view</strong> (e.g., Sales > Quotations)</li>
             <li><strong>Locate the column chooser icon</strong> (slider icon ⚙️) in the top-right corner of the table header</li>
             <li><strong>Click the icon</strong> to open the dropdown menu</li>
+            <li><strong>Use the search box</strong> to quickly find columns (optional)</li>
             <li><strong>Check/uncheck fields</strong> to show or hide columns</li>
+            <li><strong>Use batch actions</strong> to show or hide all columns at once</li>
+            <li><strong>Drag column borders</strong> to adjust column widths</li>
             <li><strong>Your preferences are automatically saved</strong> and will persist when you:
                 <ul>
                     <li>Refresh the browser</li>
@@ -156,6 +164,13 @@
                 </ul>
             </li>
         </ol>
+        
+        <h3>Keyboard Shortcuts</h3>
+        <ul>
+            <li><strong>Ctrl+Shift+C</strong>: Toggle column chooser dropdown</li>
+            <li><strong>Ctrl+Shift+S</strong>: Show all columns</li>
+            <li><strong>Ctrl+Shift+H</strong>: Hide all columns</li>
+        </ul>
 
         <h3>Example</h3>
         <ol>
@@ -171,6 +186,7 @@
         <ul>
             <li>Preferences are stored in browser localStorage</li>
             <li>Storage key format: <code>odoo12_lvfh:{model}:{view_id}</code></li>
+            <li>Stores column visibility, widths, and order preferences</li>
             <li>Automatically migrates from old storage keys</li>
             <li>Includes cleanup mechanism to prevent localStorage bloat</li>
         </ul>
@@ -191,6 +207,15 @@
         </ul>
 
         <h2>Changelog</h2>
+        <h3>Version 12.0.2.0.0</h3>
+        <ul>
+            <li><strong>New:</strong> Column width adjustment - drag column borders to resize</li>
+            <li><strong>New:</strong> Column search functionality in dropdown menu</li>
+            <li><strong>New:</strong> Batch actions - show/hide all columns</li>
+            <li><strong>New:</strong> Keyboard shortcuts support (Ctrl+Shift+C/S/H)</li>
+            <li><strong>Improved:</strong> Enhanced storage format to support column widths</li>
+            <li><strong>Improved:</strong> Better UI with search and batch action buttons</li>
+        </ul>
         <h3>Version 12.0.1.0.0</h3>
         <ul>
             <li>Initial release</li>

@@ -41,9 +41,13 @@ var MessagingMenu = Widget.extend({
         this._filter = false;
         this._updateCounter();
         var mailBus = this.call('mail_service', 'getMailBus');
-        mailBus.on('update_needaction', this, this._updateCounter);
-        mailBus.on('new_channel', this, this._updateCounter);
-        mailBus.on('update_thread_unread_counter', this, this._updateCounter);
+        if (mailBus && _.isFunction(mailBus.on)) {
+            mailBus.on('update_needaction', this, this._updateCounter);
+            mailBus.on('new_channel', this, this._updateCounter);
+            mailBus.on('update_thread_unread_counter', this, this._updateCounter);
+        } else {
+            console.warn('mail.systray.MessagingMenu: mail_service.getMailBus() unavailable; skipping mailBus event bindings.');
+        }
         return this._super.apply(this, arguments);
     },
 
@@ -98,15 +102,22 @@ var MessagingMenu = Widget.extend({
      * @returns {integer}
      */
     _computeCounter: function () {
-        var channels = this.call('mail_service', 'getChannels');
+        var channels = this.call('mail_service', 'getChannels') || [];
         var channelUnreadCounters = _.map(channels, function (channel) {
             return channel.getUnreadCounter();
         });
         var unreadChannelCounter = _.reduce(channelUnreadCounters, function (acc, c) {
             return c > 0 ? acc + 1 : acc;
         }, 0);
-        var inboxCounter = this.call('mail_service', 'getMailbox', 'inbox').getMailboxCounter();
-        var mailFailureCounter = this.call('mail_service', 'getMailFailures').length;
+        var mailbox = this.call('mail_service', 'getMailbox', 'inbox') || { getMailboxCounter: function () { return 0; } };
+        var inboxCounter = 0;
+        try {
+            inboxCounter = (mailbox && _.isFunction(mailbox.getMailboxCounter)) ? mailbox.getMailboxCounter() : 0;
+        } catch (e) {
+            inboxCounter = 0;
+        }
+        var mailFailures = this.call('mail_service', 'getMailFailures') || [];
+        var mailFailureCounter = mailFailures.length || 0;
 
         return unreadChannelCounter + inboxCounter + mailFailureCounter;
     },

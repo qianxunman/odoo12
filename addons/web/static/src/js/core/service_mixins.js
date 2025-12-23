@@ -86,6 +86,12 @@ var ServiceProviderMixin = {
             args = args.concat(event.target);
         }
         var service = this.services[event.data.service];
+        if (!service) {
+            // Service not available: log and call callback with undefined to avoid runtime error.
+            console.error('Service not available:', event.data.service, 'requested method:', event.data.method);
+            event.data.callback(undefined);
+            return;
+        }
         var result = service[event.data.method].apply(service, args);
         event.data.callback(result);
     },
